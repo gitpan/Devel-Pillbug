@@ -1,0 +1,30 @@
+#!/usr/local/bin/perl
+
+use strict;
+use warnings;
+
+use Devel::Pillbug;
+
+sub usage {
+  print "Devel::Pillbug $Devel::Pillbug::VERSION\n";
+  print "\n";
+  print "Usage:\n";
+  print "$0 [port]\n";
+  print "\n";
+  print "perldoc Devel::Pillbug for more help.\n";
+  print "\n";
+
+  exit 2;
+}
+
+sub main {
+  my $port = shift @ARGV;
+
+  usage() if $port && $port =~ /h/;
+
+  my $server = Devel::Pillbug->new($port);
+        
+  $server->run;
+}
+
+main();
