@@ -23,7 +23,7 @@ sub main {
   usage() if $port && $port =~ /h/;
 
   my $server = Devel::Pillbug->new($port);
-        
+
   $server->run;
 }
 

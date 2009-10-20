@@ -1,6 +1,6 @@
 package Devel::Pillbug;
 
-our $VERSION = 0.001;
+our $VERSION = 0.002;
 
 use strict;
 use warnings;
@@ -26,8 +26,6 @@ sub root {
 }
 
 sub mason_config {
-  my $home = File::HomeDir->my_home;
-
   return ( comp_root => root() );
 }
 
@@ -53,6 +51,7 @@ sub handle_request {
   my %conf = $self->mason_config;
   my $path = join("", $conf{comp_root}, $cgi->path_info);
 
+  ### XXX TODO Get encoding right
   if ( $path =~ /html$/ ) {
     my $status = eval { $m->handle_cgi_object($cgi) };
     if ( my $error = $@ ) {
@@ -115,12 +114,11 @@ Do it in Perl:
 
 Devel::Pillbug is a simple HTML::Mason server for dev environments.
 
-It is designed for zero configuration, and easy install from CPAN.
+It is designed for zero configuration and easy install from CPAN.
 
 Devel::Pillbug uses the "public_html" or "Sites" directory of the
 user who launched the process for its document root. Files ending
-in "html" are treated as Mason components, otherwise the raw document
-is sent.
+in "html" are treated as Mason components.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
@@ -128,6 +126,10 @@ The document root must exist and be readable, and Devel::Pillbug
 must be able to bind to its listen port (default 8080).
 
 Otherwise, this space intentionally left blank.
+
+=head1 VERSION
+
+This document is for version .002 of Devel::Pillbug.
 
 =head1 AUTHOR
 
