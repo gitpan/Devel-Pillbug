@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Devel::Pillbug;
+use Sys::Hostname;
 
 sub usage {
   print "Devel::Pillbug $Devel::Pillbug::VERSION\n";
@@ -23,6 +24,8 @@ sub main {
   usage() if $port && $port =~ /h/;
 
   my $server = Devel::Pillbug->new($port);
+
+  $server->host( hostname() );
 
   $server->run;
 }

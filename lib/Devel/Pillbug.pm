@@ -1,6 +1,21 @@
+package Devel::Pillbug::MasonHandler;
+
+use base qw| HTML::Mason::CGIHandler |;
+
+#
+# Parent does funny things with eval before we can.
+#
+# Delegate to H::M::R instead.
+#
+sub exec {
+  my $self = shift;
+
+  return HTML::Mason::Request::exec( $self, @_ );
+}
+
 package Devel::Pillbug;
 
-our $VERSION = 0.002;
+our $VERSION = 0.003;
 
 use strict;
 use warnings;
@@ -33,6 +48,57 @@ sub net_server {
   return "Net::Server::PreFork";
 }
 
+#
+#
+#
+sub _handle_mason_request {
+  my $self = shift;
+  my $cgi  = shift;
+  my $path = shift;
+
+  my $r = HTML::Mason::FakeApache->new( cgi => $cgi );
+
+  my $m = $self->mason_handler;
+
+  my $comp = $m->interp->make_component( comp_file => $path );
+
+  my $buffer;
+
+  my $req = $m->interp->make_request(
+    comp        => $comp,
+    args        => [ $cgi->Vars ],
+    cgi_request => $r,
+    out_method  => \$buffer,
+  );
+
+  $r->{http_header_sent} = 1;
+
+  $m->interp->set_global( '$r', $r );
+
+  HTML::Mason::Request::exec($req);
+
+  if ( $@ && ( !$r->status || ( $r->status !~ /^302/ ) ) ) {
+    $r->status("500 Internal Server Error");
+  } elsif ( !$r->status ) {
+    $r->status("200 OK");
+  }
+
+  #
+  #
+  #
+  print "HTTP/1.0 ";
+  print $r->http_header;
+
+  print $buffer if $buffer;
+}
+
+sub handler_class {
+  return "Devel::Pillbug::MasonHandler";
+}
+
+#
+# Sombunall of this is from H::S::S::Mason
+#
 sub handle_request {
   my $self = shift;
   my $cgi  = shift;
@@ -49,31 +115,29 @@ sub handle_request {
   local $@;
 
   my %conf = $self->mason_config;
-  my $path = join("", $conf{comp_root}, $cgi->path_info);
+  my $path = join( "", $conf{comp_root}, $cgi->path_info );
 
-  ### XXX TODO Get encoding right
-  if ( $path =~ /html$/ ) {
-    my $status = eval { $m->handle_cgi_object($cgi) };
-    if ( my $error = $@ ) {
-      $self->handle_error($error);
-    }
-  } elsif ( -e $path ) {
-    my $ft = File::Type->new();
+  if ( !-e $path ) {
+    print "HTTP/1.0 404 Not Found\r\n";
+    print "Content-Type: text/html\r\n";
+    print "\r\n";
+    print "<h1>Not Found</h1>\r\n";
+
+  } elsif ( $path =~ /html$/ ) {
+    return $self->_handle_mason_request( $cgi, $path );
+
+  } else {
+    my $ft   = File::Type->new();
     my $type = $ft->mime_type($path);
 
-    print STDOUT "HTTP/1.0 200 OK\r\n";
-    print STDOUT "Content-Type: $type\r\n";
-    print STDOUT "\r\n";
-    open(IN, "<", $path);
-    while(<IN>){
-      print STDOUT $_;
+    print "HTTP/1.0 200 OK\r\n";
+    print "Content-Type: $type\r\n";
+    print "\r\n";
+    open( IN, "<", $path );
+    while (<IN>) {
+      print $_;
     }
     close(IN);
-  } else {
-    print STDOUT "HTTP/1.0 404 Not Found\r\n";
-    print STDOUT "Content-Type: text/html\r\n";
-    print STDOUT "\r\n";
-    print STDOUT "<h1>Not Found</h1>\r\n";
   }
 }
 
@@ -108,6 +172,11 @@ Do it in Perl:
 
   my $server = Devel::Pillbug->new($port);
 
+  #
+  # Optionally use methods from HTTP::Server::Simple
+  #
+  # $server->host("yourhost");
+
   $server->run;
 
 =head1 DESCRIPTION
@@ -125,11 +194,11 @@ in "html" are treated as Mason components.
 The document root must exist and be readable, and Devel::Pillbug
 must be able to bind to its listen port (default 8080).
 
-Otherwise, this space intentionally left blank.
+See L<HTTP::Server::Simple> for additional options.
 
 =head1 VERSION
 
-This document is for version .002 of Devel::Pillbug.
+This document is for version .003 of Devel::Pillbug.
 
 =head1 AUTHOR
 
