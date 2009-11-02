@@ -1,3 +1,8 @@
+2009-11-02: .004
+  - Add docroot() method
+  - Add arg parsing to pillbug script
+  - Fix header issue when redirecting
+
 2009-10-22: .003
   - Update examples
   - Avoid handle_cgi_request entirely, it makes it impossible to reap status

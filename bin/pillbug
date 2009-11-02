@@ -7,10 +7,16 @@ use Devel::Pillbug;
 use Sys::Hostname;
 
 sub usage {
+  my $msg = shift;
+  print "$msg\n\n" if $msg;
+
   print "Devel::Pillbug $Devel::Pillbug::VERSION\n";
   print "\n";
   print "Usage:\n";
-  print "$0 [port]\n";
+  print "$0 \n";
+  print "  [-host hostname]      # Server name\n";
+  print "  [-port port]          # Port number\n";
+  print "  [-docroot root]       # Override doc root\n";
   print "\n";
   print "perldoc Devel::Pillbug for more help.\n";
   print "\n";
@@ -19,13 +25,22 @@ sub usage {
 }
 
 sub main {
-  my $port = shift @ARGV;
+  my ( $host, $port, $docroot );
 
-  usage() if $port && $port =~ /h/;
+  while ( my $arg = shift @ARGV ) {
+    if ( $arg =~ /host/ ) { $host = shift @ARGV }
+    elsif ( $arg =~ /port/ ) { $port = shift @ARGV }
+    elsif ( $arg =~ /docroot/ ) { $docroot = shift @ARGV }
+    else { usage("Unrecognized arg: $arg") }
+  }
+
+  $host ||= hostname();
 
   my $server = Devel::Pillbug->new($port);
 
-  $server->host( hostname() );
+  $server->docroot($docroot) if $docroot;
+
+  $server->host( $host );
 
   $server->run;
 }

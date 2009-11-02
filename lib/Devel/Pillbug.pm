@@ -15,7 +15,7 @@ sub exec {
 
 package Devel::Pillbug;
 
-our $VERSION = 0.003;
+our $VERSION = 0.004;
 
 use strict;
 use warnings;
@@ -25,23 +25,28 @@ use base qw/HTTP::Server::Simple::Mason/;
 use File::HomeDir;
 use File::Type;
 
-our $root;
+sub docroot {
+  my $self = shift;
+  my $docroot = shift;
 
-sub root {
-  return $root if $root;
+  $self->{_docroot} = $docroot if $docroot;
+
+  return $self->{_docroot} if $self->{_docroot};
 
   my $home = File::HomeDir->my_home;
 
   my $pubHtml = join( "/", $home, "public_html" );
   my $sites   = join( "/", $home, "Sites" );
 
-  $root = ( -d $sites ) ? $sites : $pubHtml;
+  $self->{_docroot} = ( -d $sites ) ? $sites : $pubHtml;
 
-  return $root;
+  return $self->{_docroot};
 }
 
 sub mason_config {
-  return ( comp_root => root() );
+  my $self = shift;
+
+  return ( comp_root => $self->docroot() );
 }
 
 sub net_server {
@@ -77,6 +82,9 @@ sub _handle_mason_request {
 
   HTML::Mason::Request::exec($req);
 
+  #
+  #
+  #
   if ( $@ && ( !$r->status || ( $r->status !~ /^302/ ) ) ) {
     $r->status("500 Internal Server Error");
   } elsif ( !$r->status ) {
@@ -86,8 +94,10 @@ sub _handle_mason_request {
   #
   #
   #
-  print "HTTP/1.0 ";
-  print $r->http_header;
+  my $header = $r->http_header;
+  $header =~ s|^Status:|HTTP/1.0|;
+
+  print $header;
 
   print $buffer if $buffer;
 }
@@ -160,9 +170,9 @@ Start Devel::Pillbug:
 
   > pillbug;
 
-Optionally specify a port:
+All arguments are optional:
 
-  > pillbug 8000
+  > pillbug -host example.com -port 8080 -docroot /tmp/foo
 
 Do it in Perl:
 
@@ -173,9 +183,14 @@ Do it in Perl:
   my $server = Devel::Pillbug->new($port);
 
   #
-  # Optionally use methods from HTTP::Server::Simple
+  # Optional: Use methods from HTTP::Server::Simple
   #
-  # $server->host("yourhost");
+  # $server->host("example.com");
+
+  #
+  # Optional: Override the document root
+  #
+  # $server->docroot("/tmp/foo");
 
   $server->run;
 
@@ -189,16 +204,30 @@ Devel::Pillbug uses the "public_html" or "Sites" directory of the
 user who launched the process for its document root. Files ending
 in "html" are treated as Mason components.
 
+=head1 METHODS
+
+See L<HTTP::Server::Simple> and L<HTTP::Server::Simple::Mason> for
+inherited methods.
+
+=over 4
+
+=item * $self->docroot($docroot);
+
+Returns the currently active docroot.
+
+The server will set its docroot to the received path, if one is
+supplied as an argument.
+
+=back
+
 =head1 CONFIGURATION AND ENVIRONMENT
 
 The document root must exist and be readable, and Devel::Pillbug
 must be able to bind to its listen port (default 8080).
 
-See L<HTTP::Server::Simple> for additional options.
-
 =head1 VERSION
 
-This document is for version .003 of Devel::Pillbug.
+This document is for version .004 of Devel::Pillbug.
 
 =head1 AUTHOR
 
