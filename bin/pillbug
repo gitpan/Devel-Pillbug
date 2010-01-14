@@ -17,6 +17,9 @@ sub usage {
   print "  [-host hostname]      # Server name\n";
   print "  [-port port]          # Port number\n";
   print "  [-docroot root]       # Override doc root\n";
+  print "  [-indexname name]     # Override index name (index)\n";
+  print "  [-compext name]       # Component extension (html)\n";
+  print "  [-allowindex 0|1]     # Permit directory listing\n";
   print "\n";
   print "perldoc Devel::Pillbug for more help.\n";
   print "\n";
@@ -25,22 +28,27 @@ sub usage {
 }
 
 sub main {
-  my ( $host, $port, $docroot );
+  my ( $host, $port, $docroot, $indexname, $allowindex, $compext );
 
   while ( my $arg = shift @ARGV ) {
-    if ( $arg =~ /host/ ) { $host = shift @ARGV }
-    elsif ( $arg =~ /port/ ) { $port = shift @ARGV }
-    elsif ( $arg =~ /docroot/ ) { $docroot = shift @ARGV }
-    else { usage("Unrecognized arg: $arg") }
+    if    ( $arg =~ /host/ )       { $host       = shift @ARGV }
+    elsif ( $arg =~ /port/ )       { $port       = shift @ARGV }
+    elsif ( $arg =~ /docroot/ )    { $docroot    = shift @ARGV }
+    elsif ( $arg =~ /indexname/ )  { $indexname  = shift @ARGV }
+    elsif ( $arg =~ /compext/ )    { $compext    = shift @ARGV }
+    elsif ( $arg =~ /allowindex/ ) { $allowindex = shift @ARGV }
+    else                           { usage("Unrecognized arg: $arg") }
   }
-
-  $host ||= hostname();
 
   my $server = Devel::Pillbug->new($port);
 
-  $server->docroot($docroot) if $docroot;
+  $host ||= hostname();
 
-  $server->host( $host );
+  $server->host($host);
+  $server->docroot($docroot)        if $docroot;
+  $server->index_name($indexname)   if $indexname;
+  $server->comp_ext($compext)       if $compext;
+  $server->allow_index($allowindex) if defined $allowindex;
 
   $server->run;
 }

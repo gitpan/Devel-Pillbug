@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                Devel-Pillbug
-version:             0.004
+version:             0.005
 abstract:            ~
 license:             perl
 author:              
