@@ -1,3 +1,10 @@
+.006
+  - Improved error/status trapping ($@ can be elusive in Mason)
+  - Added default HTML header/footer, and override methods
+  - Changed MIME Type guesser from File::Path to Media::Type::Simple
+  - Workaround for undef warnings tickled by nested anon components
+  - a couple of bin/pillbug args modified for consistency
+
 2010-01-14: .005
   - Make net_server and handler_class methods work as setters
   - Add setters for index filename and default extension
